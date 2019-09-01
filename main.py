@@ -4,63 +4,68 @@
 import tensorflow as tf
 import numpy as np
 from PIL import Image
+import PIL.ImageOps
 import os
 from skimage.transform import resize
 
-def convert_image_to_ndarray(image):
-    ''' Converts an image (28x28) to a NumPy ndarray object '''
 
-    # Ensure that image is in grayscale
+def load_image(path):
+    ''' Loads an image from a given path (containing the image's filename) and formats it for input into the model '''
+
+    # Open the image
+    image = Image.open(path)
+    
+    # Convert the image to grayscale if it wasn't already (TODO: Change to black & white)
     image = image.convert('L')
+    
+    # Invert the image
+    inverted_image = PIL.ImageOps.invert(image)
 
-    # Add all pixels to 2D list
-    (w, h) = image.size
-    imageList = [[0 for x in range(w)] for y in range(h)]
-    for x in range(w):
-        for y in range(h):
-            imageList[y][x] = 255 - image.getpixel((x, y))
+    # Convert the inverted image into an ndarray
+    image_ndarray = np.array(inverted_image)
 
-    imageNdArray = np.array(imageList)
-    return imageNdArray
+    # Resize the image to have the same resolution as the training data
+    image_ndarray = resize(image_ndarray, (20, 20), anti_aliasing=True)
+
+    # Add four pixels of padding to all sides of the image 
+    image_list_temp = [[0 for x in range(28)] for y in range(28)]
+    for x in range(image_ndarray.shape[0]):
+        for y in range(image_ndarray.shape[1]):
+            image_list_temp[4 + y][4 + x] = image_ndarray[y][x]
+    image_ndarray = np.array(image_list_temp)
+
+    return image_ndarray
+
 
 if __name__ == "__main__":
-    #testLabelsFile = open("test-data/test-labels/labels.csv")
-    #testLabelsString = testLabelsFile.read()
-    #testImages = []
-    #testLabels = testLabelsString.split(",")
-    #for i in range(len(testLabels)):
-    #    image = Image.open("test-data/test-images/test" + str(i) + ".png")
-    #    testImages.append(convert_image_to_ndarray(image))
-    #testImages = np.array(testImages)
-    #testImages = tf.keras.utils.normalize(testImages, axis=1).reshape(testImages.shape[0], -1)
 
-    #mlmodel = tf.keras.models.load_model('test_handwritten_num_reader2.model')
-    #predictions = mlmodel.predict(testImages)
-    #for i in range(len(predictions)):
-    #    print(str(np.argmax(predictions[i])) + " ")
-    
-    
-    data_path = 'test-data/'
-    all_images = []
-    all_labels = []
-    for i in range(10):
-        data_path_temp = 'test-data/' + str(i) + '/'
-        dirlist = os.listdir(data_path_temp)
-        for item in dirlist:
-            image_file = Image.open(data_path_temp + item)
-            image_ndarray = convert_image_to_ndarray(image_file)
-            image_ndarray = resize(image_ndarray, (round(image_ndarray.shape[0] / 45 * 28), round(image_ndarray.shape[1] / 45 * 28)), anti_aliasing=True)
-            all_images.append(image_ndarray)
-            all_labels.append(i)
-    all_images = np.array(all_images)
-    all_images = tf.keras.utils.normalize(all_images, axis = 1).reshape(all_images.shape[0], -1)
+    data_path = 'test-data/hasy-data/v2-00'
 
-    mlmodel = tf.keras.models.load_model('test_handwritten_num_reader.model')
-    predictions = mlmodel.predict(all_images)
+    testing_images = []
+    testing_labels = []
+
+    for i in range(104):
+            item_data_path = data_path + str(i+345) + ".png"
+            image = load_image(item_data_path)
+            testing_images.append(image)
+            #testing_labels.append(i)
+    testing_images = np.array(testing_images)
+    testing_images = tf.keras.utils.normalize(testing_images, axis = 1).reshape(testing_images.shape[0], -1)
+
+    mlmodel = tf.keras.models.load_model('handwritten_number_reader.model')
+    predictions = mlmodel.predict(testing_images)
+
+    labels_path = 'test-data/hasy-labels/test-labels.csv'
+    labels = open(labels_path)
+    labels_string = labels.read()
+    labels_string = labels_string.split()
+
+    for i in range(len(predictions)):
+        print(np.argmax(predictions[i]))
     successes = 0
     total = 0
     for i in range(len(predictions)):
-        if np.argmax(predictions[i]) == all_labels[i]:
+        if np.argmax(predictions[i]) == int(labels_string[i]):
             successes += 1
         total += 1
     print("Accuracy: " + str(successes / total))
