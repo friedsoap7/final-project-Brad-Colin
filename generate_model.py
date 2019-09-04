@@ -99,12 +99,11 @@ testing_data = tf.keras.utils.normalize(testing_data, axis=1).reshape(testing_da
 model = tf.keras.models.Sequential()
 model.add(tf.keras.layers.Dense(256, activation=tf.nn.relu, input_shape=training_data.shape[1:]))
 model.add(tf.keras.layers.Dense(256, activation=tf.nn.relu))
-model.add(tf.keras.layers.Dense(256, activation=tf.nn.relu))
 model.add(tf.keras.layers.Dense(15, activation=tf.nn.softmax))
 
 model.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
-model.fit(training_data, training_labels, epochs=3)
+model.fit(training_data, training_labels, epochs=10)
 
 val_loss, val_acc = model.evaluate(testing_data, testing_labels)
 print("Loss: " + str(val_loss))
