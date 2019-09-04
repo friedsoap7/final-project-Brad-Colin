@@ -1,5 +1,7 @@
 from PIL import Image
 
+limit = 20
+
 def find_lefts_and_rights(image):
     ''' Determines the startx and endx of all digits in a line '''
     (w, h) = image.size
@@ -8,6 +10,7 @@ def find_lefts_and_rights(image):
     searching_for_beginning = True
     wsc = 0 # Number of columns of white space the algorithm has passed through after the last instance of black in a digit
     for x in range(w):
+        nothing_found = True
         for y in range(h):
             if searching_for_beginning:                  # If we're looking for a new digit,
                 if image.getpixel((x, y)) == 0:              # and we find black,
@@ -15,13 +18,15 @@ def find_lefts_and_rights(image):
                     searching_for_beginning = False          # and stop searching for the start of new digits for now.
             else:                                        # If we're looking for the end of the current digit,
                 if image.getpixel((x, y)) == 0:              # and we find black, we're not done with the current digit,
+                    nothing_found = False
                     break                                    # so move on to the next column.
-        if not searching_for_beginning:                  # If we find nothing of interest while reading a digit,
+        if not searching_for_beginning and nothing_found:     # If we find nothing of interest while reading a digit,
             wsc += 1                                         # that means we've hit a line of whitespace,
             if wsc > limit:                                  # and if we've hit (limit) lines of whitespace already,
                 new_digit_loc.append(x - wsc)                # then we're done reading the current digit, so set the end xpos of the digit to the last column that had black in it,
                 digit_locations.append(new_digit_loc)        # add the startx & endx list to the list of digit locations,
                 wsc = 0                                      # reset the whitespace counter,
+                new_digit_loc = []
                 searching_for_beginning = True               # and start searching for new digits.
 
     return digit_locations
@@ -32,15 +37,18 @@ def find_top_and_bottom(image, startx, endx):
     searching_for_beginning = True
     wsc = 0
     for y in range(h):
+        nothing_found = True
         for x in range(startx, endx + 1):
             if searching_for_beginning:
                 if image.getpixel((x, y)) == 0:
                     starty = y
+                    nothing_found = False
                     searching_for_beginning = False
             else:
                 if image.getpixel((x, y)) == 0:
+                    nothing_found = False
                     break
-        if not searching_for_beginning:
+        if not searching_for_beginning and nothing_found:
             wsc += 1
             if wsc > limit:
                 endy = y - wsc
@@ -55,5 +63,7 @@ def process_input_image(image):
         digit_ypositions.append(find_top_and_bottom(image, item[0], item[1]))
 
     digit_images = []
-    for i in range(digit_xpositions):
+    for i in range(len(digit_xpositions)):
         digit_images.append(image.crop((digit_xpositions[i][0], digit_ypositions[i][0], digit_xpositions[i][1], digit_ypositions[i][1])))
+
+    return digit_images

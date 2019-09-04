@@ -7,16 +7,11 @@ from PIL import Image
 import PIL.ImageOps
 import os
 from skimage.transform import resize
+from parse_input import process_input_image
 
 
-def load_image(path):
-    ''' Loads an image from a given path (containing the image's filename) and formats it for input into the model '''
-
-    # Open the image
-    image = Image.open(path)
-    
-    # Convert the image to grayscale if it wasn't already (TODO: Change to black & white)
-    image = image.convert('L')
+def load_image(image):
+    ''' Formats an image for input into the model '''
     
     # Invert the image
     inverted_image = PIL.ImageOps.invert(image)
@@ -38,34 +33,27 @@ def load_image(path):
 
 
 if __name__ == "__main__":
+    test_line_digits_image = Image.open("test.jpg")
+    
+    test_line_digits_image = test_line_digits_image.convert('L')
+    for x in range(test_line_digits_image.size[0]):
+        for y in range(test_line_digits_image.size[1]):
+            if test_line_digits_image.getpixel((x, y)) < 80:
+                test_line_digits_image.putpixel((x, y), 0)
+            else:
+                test_line_digits_image.putpixel((x, y), 255)
+    test_line_digits_image.show()
 
-    data_path = 'test-data/hasy-data/v2-00'
-
-    testing_images = []
-    testing_labels = []
-
-    for i in range(104):
-            item_data_path = data_path + str(i+345) + ".png"
-            image = load_image(item_data_path)
-            testing_images.append(image)
-            #testing_labels.append(i)
-    testing_images = np.array(testing_images)
+    testing_images = process_input_image(test_line_digits_image)
+    temp_testing_images = []
+    for image in testing_images:
+        image = load_image(image)
+        temp_testing_images.append(image)
+    testing_images = np.array(temp_testing_images)
     testing_images = tf.keras.utils.normalize(testing_images, axis = 1).reshape(testing_images.shape[0], -1)
 
     mlmodel = tf.keras.models.load_model('handwritten_number_reader.model')
     predictions = mlmodel.predict(testing_images)
 
-    labels_path = 'test-data/hasy-labels/test-labels.csv'
-    labels = open(labels_path)
-    labels_string = labels.read()
-    labels_string = labels_string.split()
-
     for i in range(len(predictions)):
         print(np.argmax(predictions[i]))
-    successes = 0
-    total = 0
-    for i in range(len(predictions)):
-        if np.argmax(predictions[i]) == int(labels_string[i]):
-            successes += 1
-        total += 1
-    print("Accuracy: " + str(successes / total))
