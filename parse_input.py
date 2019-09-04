@@ -1,6 +1,6 @@
 from PIL import Image
 
-limit = 20
+limit = 5 
 
 def find_lefts_and_rights(image):
     ''' Determines the startx and endx of all digits in a line '''
