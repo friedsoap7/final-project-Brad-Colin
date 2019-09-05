@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from PIL import Image
-from main import load_image
+from parse_input import format_image
 import os
 from skimage.transform import resize
 
@@ -16,7 +16,7 @@ def load_from_sorted_dir(label, dirname):
     item_path = "training-data/" + str(dirname) + "/"
     dirlist = os.listdir(item_path)
     for item in dirlist:
-        image = load_image(Image.open(item_path + item))
+        image = format_image(Image.open(item_path + item))
         extra_data.append(image)
         extra_labels.append(label)
 
