@@ -7,6 +7,25 @@ from PIL import Image
 import parse_input
 
 
+def get_predictions(predictions):
+    predictions_string = ""
+    for i in range(len(predictions)):
+        prediction = np.argmax(predictions[i])
+        if prediction < 10:
+            predictions_string += str(prediction)
+        elif prediction == 10:
+            predictions_string += "+"
+        elif prediction == 11:
+            predictions_string += "-"
+        elif prediction == 12:
+            predictions_string += "*"
+        elif prediction == 13:
+            predictions_string += "/"
+        else:
+            predictions_string += "%"
+    return predictions_string
+
+
 if __name__ == "__main__":
     test_line_digits_image = Image.open("test.jpg")
     testing_images = parse_input.split_input_image(test_line_digits_image)
@@ -20,5 +39,11 @@ if __name__ == "__main__":
     mlmodel = tf.keras.models.load_model('handwritten_number_reader.model')
     predictions = mlmodel.predict(testing_images)
 
-    for i in range(len(predictions)):
-        print(np.argmax(predictions[i]))
+    predicted_expression = get_predictions(predictions)
+    try:
+        print(predicted_expression + " = " + str(eval(predicted_expression)))
+    except SyntaxError:
+        print("Either you have entered an invalid input, or the model misunderstood your input.")
+        print("The computer understood your input as: " + predicted_expression)
+        print("If this is what you intended, please fix your input.")
+        print("If the computer misunderstood your input, please take a new photo of your intended input.")

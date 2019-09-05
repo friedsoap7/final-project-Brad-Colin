@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from PIL import Image
+import PIL.ImageOps
 from parse_input import format_image
 import os
 from skimage.transform import resize
@@ -16,9 +17,10 @@ def load_from_sorted_dir(label, dirname):
     item_path = "training-data/" + str(dirname) + "/"
     dirlist = os.listdir(item_path)
     for item in dirlist:
-        image = format_image(Image.open(item_path + item))
+        image = format_image(np.array(PIL.ImageOps.invert(Image.open(item_path + item)).convert("L")))
         extra_data.append(image)
         extra_labels.append(label)
+
 
 for i in range(15):
     if i < 10:
@@ -33,6 +35,7 @@ for i in range(15):
         load_from_sorted_dir(13, "data-divide")
     else:
         load_from_sorted_dir(14, "data-modulo")
+
 training_data = np.append(training_data, np.array(extra_data), axis=0)
 training_labels = np.append(training_labels, extra_labels)
 
