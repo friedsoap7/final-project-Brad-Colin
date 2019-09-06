@@ -1,4 +1,4 @@
-# Main file of image recognition calculator (to be named later!)
+# Main file of image recognition calculator
 # Created by: Brad Powell, Colin Lemarchand
 
 import tensorflow as tf
